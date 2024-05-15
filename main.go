@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var (
+const (
 	maxConcurrency = 5
 	maxRetries     = 3
 	retryInterval  = 2 * time.Second
