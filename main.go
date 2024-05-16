@@ -32,9 +32,7 @@ func main() {
 	defer logFile.Close()
 
 	multi := io.MultiWriter(os.Stdout, logFile)
-	logger := log.New(multi, "", log.LstdFlags)
-
-	log.SetOutput(logger.Writer())
+	log.SetOutput(multi)
 
 	links := []string{
 		"http://google.com",
@@ -45,11 +43,8 @@ func main() {
 		"http://amazon.com",
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	c := make(chan string)
 
@@ -61,13 +56,6 @@ func main() {
 		wg.Add(1)
 		go checkLink(ctx, c, sem, &wg, link, 0)
 	}
-
-	go func() {
-		<-sigs
-		log.Println("Received shutdown signal, cancelling context...")
-
-		cancel()
-	}()
 
 	go func() {
 		for {
